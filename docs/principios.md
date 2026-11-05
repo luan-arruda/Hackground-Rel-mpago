@@ -79,6 +79,40 @@ pelo nome, como o `isEmpty()` do artigo.
 cantina não vê nem mexe nos pedidos e produtos de outra, um estudante não cancela nem avalia pedido
 alheio e só o CESAR cria cantinas. Os testes cobrem cada caso ([`casosDeUso.test.ts`](../tests/casosDeUso.test.ts)).
 
+## Métricas
+
+Para não deixar a coesão só no texto, medimos a **complexidade ciclomática** (McCabe) e o **LCOM4**
+(coesão por componentes conexos: 1 = classe totalmente coesa) antes e depois do refactor de módulos
+profundos (commits `c2ea384` → `fa7b40f`), com a API do compilador TypeScript. `WMC` é a soma da
+complexidade ciclomática dos métodos da classe.
+
+A extração do HTML de cada aba para `ui/cantina/` enxugou a `TelaCantina`, que ficou só com o estado
+e o roteamento de cliques:
+
+| `TelaCantina.ts` | Antes | Depois | Δ |
+|---|---|---|---|
+| Linhas | 331 | 200 | −40% |
+| Métodos | 15 | 10 | −5 |
+| WMC (Σ complexidade) | 49 | 35 | −29% |
+| Complexidade máxima (`aoClicar`) | 10 | 10 | = |
+| LCOM4 | 1 | 1 | = |
+
+A complexidade não sumiu: migrou para seis módulos de responsabilidade única em
+[`ui/cantina/`](../src/ui/cantina) (complexidade total por arquivo: `htmlEstoque` 53, `htmlResumo` 26,
+`htmlNovoProduto` 15, `htmlPedidos` 12, `htmlCardapio` 6, `htmlConfiguracoes` 2). O total é maior que o
+que saiu da classe porque o mesmo refactor também encorpou as abas Resumo e Estoque — a responsabilidade
+foi **relocada e ampliada**, não eliminada.
+
+Em [`TelaEstudante`](../src/ui/TelaEstudante.ts) as métricas não mudam (WMC 74, LCOM4 1 nas duas versões):
+ali o refactor foi de acoplamento — trocar `listar()` + `avaliacoesDoCardapio()` + `cardapioDoDia()` pela
+chamada única `consultar.vitrine()` e declarar as interfaces segregadas —, e isso não acrescenta nem
+remove ramos de decisão.
+
+> **Ressalva honesta:** o LCOM4 dá 1 (coesão máxima) em todas as versões das duas telas, porque são
+> classes-controladoras em que todo método usa `this.deps` — o grafo de coesão sempre colapsa num
+> componente só, então nenhuma variante de LCOM discrimina este refactor. Aqui quem mede o efeito é a
+> complexidade ciclomática (WMC) junto do número de métodos e linhas.
+
 ## Usabilidade (heurísticas de Nielsen)
 
 - **Status visível:** selos *Agendado → Pronto! → Retirado*; aviso na tela do estudante; contadores nas abas; faixa de alerta de estoque em todas as abas da cantina.
